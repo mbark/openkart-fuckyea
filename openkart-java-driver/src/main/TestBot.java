@@ -19,7 +19,7 @@ public class TestBot implements Bot {
 		}
 		
 		ApiClient client = new ApiClient(url, accessKey, teamName);
-		client.Run(new MyBot());
+		client.Run(new TestBot());
 	}
 	
 	Integer targetEnemy;

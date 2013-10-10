@@ -59,6 +59,9 @@ public class MyBot implements Bot {
 				closest = kart;
 			}
 		}
+		if(closest == null) {
+			return order;
+		}
 		
 		if(distance(me, interpolate(closest)) < 30) {
 			order.setFireAt(closest.getId());

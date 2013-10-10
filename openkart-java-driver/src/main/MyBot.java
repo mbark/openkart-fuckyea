@@ -48,12 +48,20 @@ public class MyBot implements Bot {
 		
 		Point2d goal = new Point2d();
 		
-		if(shellPriority == Double.MAX_VALUE) {
+		if(shellPriority == Double.MAX_VALUE || closestBoxDistance < 20) {
 			goal = closestBox;
 		} else {
+			double denom = shellPriority + enemyPriority;
+			
+			closestBox.multiply(shellPriority);
+			closestBox.divide(denom);
+			attackEnemy.multiply(enemyPriority);
+			attackEnemy.divide(denom);
+			
 			goal.add(closestBox);
 			goal.add(attackEnemy);
 			goal.add(fear);
+			
 			goal.divide(3);
 		}
 		
@@ -77,6 +85,10 @@ public class MyBot implements Bot {
 				avg.add(asPoint(enemy));
 			}
 		}
+		if(sum == 0) {
+			return asPoint(state.getYourKart());
+		}
+		
 		avg.divide(sum);
 		Point2d here = new Point2d();
 		

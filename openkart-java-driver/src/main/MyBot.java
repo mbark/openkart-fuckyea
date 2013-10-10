@@ -30,6 +30,7 @@ public class MyBot implements Bot {
 	@Override
 	public Order playGame(GameState state) {
 		Kart me = state.getYourKart();
+		Order order = new Order();
 		
 		// This default implementation will move towards the closest item box
 		ItemBox closestItemBox = null;
@@ -39,11 +40,27 @@ public class MyBot implements Bot {
 			}
 		}
 		if(closestItemBox != null) {
-			return Order.MoveOrder(closestItemBox.getXPos(), closestItemBox.getYPos());
+			order = Order.MoveOrder(closestItemBox.getXPos(), closestItemBox.getYPos());
 		}
-		
-		// Returning null is ok, your bot will continue doing what it is doing
-		return null;
+		if(me.getShells() > 0 && me.getShellCooldownTimeLeft() == 0) {
+			order = shootClosestPlayer(order, state);
+		}
+
+		return order;
+	}
+	
+	private Order shootClosestPlayer(Order order, GameState state) {
+		Kart me = state.getYourKart();
+		double shortest = Double.MAX_VALUE;
+		Kart closest = null;
+		for(Kart kart : state.getEnemyKarts()) {
+			if(distance(kart, me) < shortest) {
+				shortest = distance(kart, me);
+				closest = kart;
+			}
+		}
+		order.setFireAt(closest.getId());
+		return order;
 	}
 	
 	private double distance(Entity a, Entity b) {

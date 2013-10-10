@@ -65,7 +65,13 @@ public class Point2d extends Entity {
 	}
 		
 	public void add(Point2d... p) {
+		if(p == null) {
+			return;
+		}
 		for(int i = 0; i<p.length; i++) {
+			if(p[i] == null) {
+				continue;
+			}
 			x += p[i].x;
 			y += p[i].y;
 		}

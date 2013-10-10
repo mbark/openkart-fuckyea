@@ -1,5 +1,7 @@
 package main;
 
+import javax.swing.text.Position;
+
 import se.openmind.kart.*;
 import se.openmind.kart.GameState.*;
 import se.openmind.kart.OrderUpdate.Order;
@@ -22,7 +24,9 @@ public class MyBot implements Bot {
 		client.Run(new MyBot());
 	}
 	
-	Integer targetEnemy;
+	Kart targetEnemy;
+	double closestBoxDistance;
+	ItemBox closestBox;
 	
 	/**
 	 * This is the main method that the ApiClient will invoke, put your game logic here.
@@ -31,17 +35,31 @@ public class MyBot implements Bot {
 	public Order playGame(GameState state) {
 		Kart me = state.getYourKart();
 		Order order = new Order();
-		Point2d position;
 		
-		if(playDefensive(state) != null) {
-			position = playDefensive(state);
-		} else if(me.getShells() == 5) {
-			position = moveToClosestEnemy(state);
+		double shellPriority = getShellPriority(state);
+		double enemyPriority = getEnemyPriority(state);
+		Point2d closestBox = moveToClosestBox(state);
+		Point2d attackEnemy = asPoint(targetEnemy);
+		Point2d fear = avoidEnemy(state);
+		
+		Point2d goal = asPoint(me);
+		
+		if(shellPriority == Double.MAX_VALUE) {
+			goal = closestBox;
 		} else {
-			position = moveToClosestBox(state);
+			closestBox.normalize(shellPriority);
+			attackEnemy.normalize(enemyPriority);
+			
+			goal.add(closestBox);
+			goal.add(attackEnemy);
+			goal.add(fear);
+			
+			goal.normalize(5);
 		}
 		
-		moveTowards(order, position);
+		goal = scaleToMap(goal);
+		
+		order = moveTowards(order, goal);
 		if(me.getShells() > 0 && me.getShellCooldownTimeLeft() == 0) {
 			order = shootClosestPlayer(order, state);
 		}
@@ -49,27 +67,63 @@ public class MyBot implements Bot {
 		return order;
 	}
 	
-	private Point2d playDefensive(GameState state) {
+	private Point2d avoidEnemy(GameState state) {
+		int cutoff = 50;
 		Kart me = state.getYourKart();
-		if(me.getShellCooldownTimeLeft() > 0) {
-			return getAveragePosition(state);
+		Point2d avg = new Point2d();
+		double sum = 0;
+		
+		for(Kart enemy : state.getEnemyKarts()) {
+			if(distance(me, enemy) < cutoff) {
+				sum += distance(me, enemy);
+				avg.add(asPoint(enemy));
+			}
+		}
+		avg.divide(sum);
+		Point2d here = asPoint(me);
+		
+		here.subtract(avg);
+		
+		return here;
+	}
+	
+	private double getShellPriority(GameState state) {
+		int shells = state.getYourKart().getShells();
+		if(shells == 0) {
+			return Double.MAX_VALUE;
 		} else {
-			return null;
+			return 10 * (5 - shells);
 		}
 	}
 	
-	private Point2d getAveragePosition(GameState state) {
+	private double getEnemyPriority(GameState state) {
 		Kart me = state.getYourKart();
-		int cutoff = 40;
-		Point2d result = new Point2d();
-		for(Kart kart : state.getEnemyKarts()) {
-			if(distance(me, kart) < cutoff) {
-				Point2d position = new Point2d(kart.getXPos(), kart.getYPos());
-				result.subtract(position);
+		if(me.getShellCooldownTimeLeft() > 0) {
+			return Double.MIN_VALUE;
+		}
+		if(me.getShells() == 0) {
+			return Double.MIN_VALUE;
+		}
+		
+		double maxScore = Double.MIN_VALUE;
+		for(Kart enemy : state.getEnemyKarts()) {
+			if(enemy.getInvulnerableTimeLeft() > 0) {
+				continue;
+			}
+			double score = 0;
+			if(enemy.getShellCooldownTimeLeft() > 0) {
+				score += 5;
+			}
+			if(enemy.getShells() == 0) {
+				score += 10;
+			}
+			score += (50 - distance(me, enemy));
+			if(score > maxScore) {
+				targetEnemy = enemy;
 			}
 		}
-		result.divide(state.getEnemyKarts().size());
-		return result;
+		
+		return maxScore;
 	}
 	
 	private Point2d moveToClosestBox(GameState state) {
@@ -84,27 +138,6 @@ public class MyBot implements Bot {
 			return new Point2d(closestItemBox.getXPos(), closestItemBox.getYPos());
 		}
 		return null;
-	}
-	
-	private Point2d moveToClosestEnemy(GameState state) {
-		Kart me = state.getYourKart();
-		double distance = Double.MAX_VALUE;
-		Kart closest = null;
-		
-		for(Kart enemy : state.getEnemyKarts()) {
-			if(distance(me, enemy) < distance) {
-				distance = distance(me, enemy);
-				closest = enemy;
-			}
-		}
-		if(closest == null) {
-			return null;
-		}
-		
-		Point2d c = interpolate(closest);
-		c = scaleToMap(c);
-		
-		return c;
 	}
 	
 	public double getAngleBetween(Point2d p1, Point2d p2) {
@@ -153,13 +186,10 @@ public class MyBot implements Bot {
 	
 	private boolean willMostDefinitelyHit(Kart me, Kart enemy) {
 		double distance = distance(me, interpolate(enemy));
-		if(distance < 30) {
-			return false;
-		}
 		double angle = getAngleBetween(asPoint(me), asPoint(enemy));
 		angle %= Math.PI;
 		
-		if(angle < Math.PI / 2) {
+		if(angle < Math.PI / 2 && distance < 30) {
 			return true;
 		}
 		

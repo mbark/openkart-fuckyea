@@ -48,13 +48,15 @@ public class Point2d extends Entity {
 		y /= divisor;
 	}
 	
-	public void multiply(double... d) {
+	public Point2d multiply(double... d) {
 		double multiplier = 1;
 		for(int i = 0; i < d.length; i++) {
 			multiplier *= d[i];
 		}
 		x *= multiplier;
 		y *= multiplier;
+		
+		return this;
 	}
 	
 	public void subtract(Point2d... p) {

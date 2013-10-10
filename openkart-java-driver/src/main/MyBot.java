@@ -33,13 +33,16 @@ public class MyBot implements Bot {
 		Order order = new Order();
 		Point2d position = new Point2d();
 		
-		if(me.getShells() == 5) {
-			position.add(moveToClosestEnemy(state));
+		position = playDefensive(state);
+		if(position != null) {
+		} else if(me.getShells() == 5) {
+			position = moveToClosestEnemy(state);
 		} else {
-			position.add(moveToClosestBox(state));
+			position = moveToClosestBox(state);
 		}
-		position.add(playDefensive(state));
 		
+		order.setMoveX(position.x);
+		order.setMoveY(position.y);
 		
 		if(me.getShells() > 0 && me.getShellCooldownTimeLeft() == 0) {
 			order = shootClosestPlayer(order, state);

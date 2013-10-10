@@ -32,7 +32,21 @@ public class MyBot implements Bot {
 		Kart me = state.getYourKart();
 		Order order = new Order();
 		
-		// This default implementation will move towards the closest item box
+		if(me.getShells() == 5) {
+			order = moveToClosestEnemey(order, state);
+		} else {
+			order = moveToClosestBox(order, state);
+		}
+		
+		if(me.getShells() > 0 && me.getShellCooldownTimeLeft() == 0) {
+			order = shootClosestPlayer(order, state);
+		}
+
+		return order;
+	}
+	
+	private Order moveToClosestBox(Order order, GameState state) {
+		Kart me = state.getYourKart();
 		ItemBox closestItemBox = null;
 		for(ItemBox i : state.getItemBoxes()) {
 			if(closestItemBox == null || distance(me, i) < distance(me, closestItemBox)) {
@@ -40,12 +54,32 @@ public class MyBot implements Bot {
 			}
 		}
 		if(closestItemBox != null) {
-			order = Order.MoveOrder(closestItemBox.getXPos(), closestItemBox.getYPos());
+			order.setMoveX(closestItemBox.getXPos());
+			order.setMoveY(closestItemBox.getYPos());
 		}
-		if(me.getShells() > 0 && me.getShellCooldownTimeLeft() == 0) {
-			order = shootClosestPlayer(order, state);
+		return order;
+	}
+	
+	private Order moveToClosestEnemey(Order order, GameState state) {
+		Kart me = state.getYourKart();
+		double distance = Double.MAX_VALUE;
+		Kart closest = null;
+		
+		for(Kart enemy : state.getEnemyKarts()) {
+			if(distance(me, enemy) < distance) {
+				distance = distance(me, enemy);
+				closest = enemy;
+			}
 		}
-
+		if(closest == null) {
+			return order;
+		}
+		
+		Coordinate c = interpolate(closest);
+		
+		order.setMoveX(c.getXPos());
+		order.setMoveY(c.getYPos());
+		
 		return order;
 	}
 	
@@ -63,11 +97,32 @@ public class MyBot implements Bot {
 			return order;
 		}
 		
-		if(distance(me, interpolate(closest)) < 30) {
-			order.setFireAt(closest.getId());
+		if(willMostDefinitelyHit(me, closest)) {
+			if(canBeShot(closest)) {
+				order.setFireAt(closest.getId());
+			}
 		}
 		
 		return order;
+	}
+	
+	private boolean canBeShot(Kart enemy) {
+		return enemy.getInvulnerableTimeLeft() == 0;
+	}
+	
+	private boolean willMostDefinitelyHit(Kart me, Kart enemy) {
+		double angleDiff = Math.abs(me.getDirection() - enemy.getDirection()) % Math.PI;
+		double distance = distance(me, interpolate(enemy));
+		
+		if(distance > 30) {
+			return false;
+		}
+		
+		if(angleDiff < Math.PI / 4) {
+			return true;
+		}
+		
+		return false;
 	}
 	
 	private Coordinate interpolate(MovingEntity e) {

@@ -59,8 +59,41 @@ public class MyBot implements Bot {
 				closest = kart;
 			}
 		}
-		order.setFireAt(closest.getId());
+		
+		if(distance(me, interpolate(closest)) < 30) {
+			order.setFireAt(closest.getId());
+		}
+		
 		return order;
+	}
+	
+	private Coordinate interpolate(MovingEntity e) {
+		double xSpeed = 10 * Math.cos(e.getDirection());
+		double ySpeed = 10 * Math.sin(e.getDirection());
+		
+		double x = (e.getXPos() + xSpeed);
+		double y = (e.getYPos() + ySpeed);
+		
+		return new Coordinate(x, y);
+	}
+	
+	private final class Coordinate extends Entity {
+		double x;
+		double y;
+		private Coordinate(double x, double y) {
+			this.x = x;
+			this.y = y;
+		}
+		
+		@Override
+		public double getXPos() {
+			return x;
+		}
+		
+		@Override
+		public double getYPos() {
+			return y;
+		}
 	}
 	
 	private double distance(Entity a, Entity b) {

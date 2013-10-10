@@ -118,7 +118,7 @@ public class MyBot implements Bot {
 	
 	private boolean willMostDefinitelyHit(Kart me, Kart enemy) {
 		double distance = distance(me, interpolate(enemy));
-		return distance < 30 && distance > 15;
+		return distance < 30;
 	}
 	
 	private Point2d scaleToMap(Point2d c) {

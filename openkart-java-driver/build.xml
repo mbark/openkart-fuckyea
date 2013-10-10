@@ -1,0 +1,40 @@
+﻿<project>
+    <property environment="env"/>
+    <property name="src" value="src"/>
+    <property name="build" value="build"/>
+    <property name="libs" value="lib"/>
+
+    <target name="clean">
+        <delete dir="${build}"/>
+    </target>
+
+    <path id="libs-classpath">
+      <fileset dir="${libs}">
+        <include name="*.jar"/>
+      </fileset>
+    </path>
+
+    <target name="compile" depends="clean">
+        <mkdir dir="build/classes"/>
+        <javac srcdir="src" destdir="build/classes">
+            <classpath refid="libs-classpath"/>
+        </javac>
+    </target>
+
+    <target name="jar" depends="compile">
+        <mkdir dir="${build}/jar"/>
+        <jar jarfile="${build}/jar/deps.jar">
+            <zipgroupfileset dir="${libs}">
+                <include name="**/*.jar" />
+            </zipgroupfileset>
+        </jar>
+        <sleep seconds="1" />
+        <jar jarfile="${build}/jar/client.jar" basedir="${build}/classes">
+            <zipfileset src="${build}/jar/deps.jar" excludes="META-INF/*.SF" />
+            <manifest>
+                <attribute name="Main-Class" value="se.openmind.kart.Util"/>
+            </manifest>
+        </jar>
+    </target>
+
+</project>

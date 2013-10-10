@@ -1,9 +1,13 @@
 package main;
 
-import javax.swing.text.Position;
-
-import se.openmind.kart.*;
-import se.openmind.kart.GameState.*;
+import se.openmind.kart.ApiClient;
+import se.openmind.kart.Bot;
+import se.openmind.kart.GameConstants;
+import se.openmind.kart.GameState;
+import se.openmind.kart.GameState.Entity;
+import se.openmind.kart.GameState.ItemBox;
+import se.openmind.kart.GameState.Kart;
+import se.openmind.kart.GameState.MovingEntity;
 import se.openmind.kart.OrderUpdate.Order;
 
 public class MyBot implements Bot {
@@ -35,30 +39,23 @@ public class MyBot implements Bot {
 	public Order playGame(GameState state) {
 		Kart me = state.getYourKart();
 		Order order = new Order();
-		Point2d position = new Point2d(me.getXPos(), me.getYPos());
 		
 		double shellPriority = getShellPriority(state);
 		double enemyPriority = getEnemyPriority(state);
 		Point2d closestBox = moveToClosestBox(state);
-		Point2d attackEnemy = asPoint(targetEnemy);
+		Point2d attackEnemy = targetEnemy == null ? new Point2d() : asPoint(targetEnemy);
 		Point2d fear = avoidEnemy(state);
 		
-		Point2d goal = asPoint(me);
+		Point2d goal = new Point2d();
 		
 		if(shellPriority == Double.MAX_VALUE) {
 			goal = closestBox;
 		} else {
-			closestBox.normalize(shellPriority);
-			attackEnemy.normalize(enemyPriority);
-			
 			goal.add(closestBox);
 			goal.add(attackEnemy);
 			goal.add(fear);
-			
-			goal.normalize(5);
+			goal.divide(3);
 		}
-		
-		goal = scaleToMap(goal);
 		
 		order = moveTowards(order, goal);
 		if(me.getShells() > 0 && me.getShellCooldownTimeLeft() == 0) {
@@ -81,7 +78,7 @@ public class MyBot implements Bot {
 			}
 		}
 		avg.divide(sum);
-		Point2d here = asPoint(me);
+		Point2d here = new Point2d();
 		
 		here.subtract(avg);
 		

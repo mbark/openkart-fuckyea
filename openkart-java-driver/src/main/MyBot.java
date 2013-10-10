@@ -31,7 +31,7 @@ public class MyBot implements Bot {
 	public Order playGame(GameState state) {
 		Kart me = state.getYourKart();
 		Order order = new Order();
-		Point2d position;
+		Point2d position = new Point2d(me.getXPos(), me.getYPos());
 		
 		if(playDefensive(state) != null) {
 			position = playDefensive(state);
@@ -153,17 +153,57 @@ public class MyBot implements Bot {
 	
 	private boolean willMostDefinitelyHit(Kart me, Kart enemy) {
 		double distance = distance(me, interpolate(enemy));
-		if(distance < 30) {
+		if(distance > 30) {
 			return false;
 		}
-		double angle = getAngleBetween(asPoint(me), asPoint(enemy));
+		return isInsideShootingTriangle(me, enemy);
+		/*double angle = getAngleBetween(asPoint(me), asPoint(enemy));
 		angle %= Math.PI;
 		
 		if(angle < Math.PI / 2) {
 			return true;
 		}
 		
-		return false;
+		return false;*/
+	}
+	
+	private boolean isInsideShootingTriangle(Kart me, Kart enemy) {
+		double range = 40;
+		Point2d myPos = asPoint(me);
+		Point2d enemyPos = asPoint(enemy);
+		double diffusion = Math.PI / 3;
+		double shootingAngle = me.getDirection();
+		double rightAngle = shootingAngle - diffusion;
+		double leftAngle = shootingAngle + diffusion;
+		Point2d rightPoint = new Point2d(
+				myPos.x + Math.cos(rightAngle) * range, 
+				myPos.y + Math.sin(rightAngle) * range);
+		Point2d leftPoint = new Point2d(
+				myPos.x + Math.cos(leftAngle) * range, 
+				myPos.y + Math.sin(leftAngle) * range);
+		double reverse = shootingAngle + Math.PI;
+		double rightAngleReverse = reverse - diffusion;
+		double leftAngleReverse = reverse + diffusion;
+		Point2d rightPointReverse = new Point2d(
+				myPos.x + Math.cos(rightAngleReverse) * range, 
+				myPos.y + Math.sin(rightAngleReverse) * range);
+		Point2d leftPointReverse = new Point2d(
+				myPos.x + Math.cos(leftAngleReverse) * range, 
+				myPos.y + Math.sin(leftAngleReverse) * range);
+		
+		boolean goodForward = isPointInsideTriangle(enemyPos, myPos, leftPoint, rightPoint);
+		boolean goodBackwards = isPointInsideTriangle(enemyPos, myPos, leftPointReverse, rightPointReverse);
+		return goodForward || goodBackwards;
+	}
+	
+	private boolean isPointInsideTriangle(Point2d s, Point2d a, Point2d b, Point2d c)
+	{
+	    int as_x = (int) (s.x - a.x);
+	    int as_y = (int) (s.y - a.y);
+	    boolean s_ab = (b.x-a.x)*as_y-(b.y-a.y)*as_x > 0;
+	    if((c.x-a.x)*as_y-(c.y-a.y)*as_x > 0 == s_ab) return false;
+	    if((c.x-b.x)*(s.y-b.y)-(c.y-b.y)*(s.x-b.x) > 0 != s_ab) return false;
+	    return true;
 	}
 	
 	private Point2d asPoint(Entity e) {

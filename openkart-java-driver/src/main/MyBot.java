@@ -9,8 +9,8 @@ public class MyBot implements Bot {
 	 * The first thing you should do is enter your access key and team name 
 	 * Note: Team name cannot be changed once set (without magic from contest administrators)
 	 */
-	private static String accessKey = "";
-	private static String teamName =  "";
+	private static String accessKey = "7d06282d";
+	private static String teamName =  "Bartin Shlied";
 	
 	public static void main(String[] args) {
 		String url = "http://localhost:8080/api/GameState";

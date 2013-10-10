@@ -107,6 +107,16 @@ public class MyBot implements Bot {
 		return c;
 	}
 	
+	public double getAngleBetween(Point2d p1, Point2d p2) {
+		double a1 = Math.atan2(p1.y, p1.x);
+		double a2 = Math.atan2(p2.y, p2.x);
+
+		if (a1 < -Math.PI/2 && a2 > Math.PI/2) a1 += Math.PI * 2;
+		if (a2 < -Math.PI/2 && a1 > Math.PI/2) a2 += Math.PI * 2;
+
+		return a2-a1;
+	}
+	
 	private Order moveTowards(Order order, Point2d c) {
 		order.setMoveX(c.getXPos());
 		order.setMoveY(c.getYPos());
@@ -143,7 +153,21 @@ public class MyBot implements Bot {
 	
 	private boolean willMostDefinitelyHit(Kart me, Kart enemy) {
 		double distance = distance(me, interpolate(enemy));
-		return distance < 30;
+		if(distance < 30) {
+			return false;
+		}
+		double angle = getAngleBetween(asPoint(me), asPoint(enemy));
+		angle %= Math.PI;
+		
+		if(angle < Math.PI / 2) {
+			return true;
+		}
+		
+		return false;
+	}
+	
+	private Point2d asPoint(Entity e) {
+		return new Point2d(e.getXPos(), e.getYPos());
 	}
 	
 	private Point2d scaleToMap(Point2d c) {

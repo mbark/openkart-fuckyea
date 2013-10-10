@@ -33,7 +33,7 @@ public class MyBot implements Bot {
 		Order order = new Order();
 		
 		if(me.getShells() == 5) {
-			order = moveToClosestEnemey(order, state);
+			order = moveToClosestEnemy(order, state);
 		} else {
 			order = moveToClosestBox(order, state);
 		}
@@ -60,7 +60,7 @@ public class MyBot implements Bot {
 		return order;
 	}
 	
-	private Order moveToClosestEnemey(Order order, GameState state) {
+	private Order moveToClosestEnemy(Order order, GameState state) {
 		Kart me = state.getYourKart();
 		double distance = Double.MAX_VALUE;
 		Kart closest = null;
@@ -76,6 +76,7 @@ public class MyBot implements Bot {
 		}
 		
 		Coordinate c = interpolate(closest);
+		c = scaleToMap(c);
 		
 		order.setMoveX(c.getXPos());
 		order.setMoveY(c.getYPos());
@@ -123,6 +124,22 @@ public class MyBot implements Bot {
 		}
 		
 		return false;
+	}
+	
+	private Coordinate scaleToMap(Coordinate c) {
+		if(c.x > GameConstants.MaxBoundX) {
+			c.x = GameConstants.MaxBoundX;
+		} else if(c.x < GameConstants.MinBoundX) {
+			c.x = GameConstants.MinBoundX;
+		}
+		
+		if(c.y > GameConstants.MaxBoundY) {
+			c.y = GameConstants.MaxBoundY;
+		} else if(c.y < GameConstants.MinBoundY) {
+			c.y = GameConstants.MinBoundY;
+		}
+		
+		return c;
 	}
 	
 	private Coordinate interpolate(MovingEntity e) {

@@ -75,9 +75,14 @@ public class MyBot implements Bot {
 			return order;
 		}
 		
-		Coordinate c = interpolate(closest);
+		Point2d c = interpolate(closest);
 		c = scaleToMap(c);
+		order = moveTowards(order, c);
 		
+		return order;
+	}
+	
+	private Order moveTowards(Order order, Point2d c) {
 		order.setMoveX(c.getXPos());
 		order.setMoveY(c.getYPos());
 		
@@ -112,21 +117,11 @@ public class MyBot implements Bot {
 	}
 	
 	private boolean willMostDefinitelyHit(Kart me, Kart enemy) {
-		double angleDiff = Math.abs(me.getDirection() - enemy.getDirection()) % Math.PI;
 		double distance = distance(me, interpolate(enemy));
-		
-		if(distance > 30) {
-			return false;
-		}
-		
-		if(angleDiff < Math.PI / 4) {
-			return true;
-		}
-		
-		return false;
+		return distance < 30 && distance > 15;
 	}
 	
-	private Coordinate scaleToMap(Coordinate c) {
+	private Point2d scaleToMap(Point2d c) {
 		if(c.x > GameConstants.MaxBoundX) {
 			c.x = GameConstants.MaxBoundX;
 		} else if(c.x < GameConstants.MinBoundX) {
@@ -142,33 +137,14 @@ public class MyBot implements Bot {
 		return c;
 	}
 	
-	private Coordinate interpolate(MovingEntity e) {
+	private Point2d interpolate(MovingEntity e) {
 		double xSpeed = 10 * Math.cos(e.getDirection());
 		double ySpeed = 10 * Math.sin(e.getDirection());
 		
 		double x = (e.getXPos() + xSpeed);
 		double y = (e.getYPos() + ySpeed);
 		
-		return new Coordinate(x, y);
-	}
-	
-	private final class Coordinate extends Entity {
-		double x;
-		double y;
-		private Coordinate(double x, double y) {
-			this.x = x;
-			this.y = y;
-		}
-		
-		@Override
-		public double getXPos() {
-			return x;
-		}
-		
-		@Override
-		public double getYPos() {
-			return y;
-		}
+		return new Point2d(x, y);
 	}
 	
 	private double distance(Entity a, Entity b) {

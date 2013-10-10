@@ -31,19 +31,17 @@ public class MyBot implements Bot {
 	public Order playGame(GameState state) {
 		Kart me = state.getYourKart();
 		Order order = new Order();
-		Point2d position = new Point2d();
+		Point2d position;
 		
-		position = playDefensive(state);
-		if(position != null) {
+		if(playDefensive(state) != null) {
+			position = playDefensive(state);
 		} else if(me.getShells() == 5) {
 			position = moveToClosestEnemy(state);
 		} else {
 			position = moveToClosestBox(state);
 		}
 		
-		order.setMoveX(position.x);
-		order.setMoveY(position.y);
-		
+		moveTowards(order, position);
 		if(me.getShells() > 0 && me.getShellCooldownTimeLeft() == 0) {
 			order = shootClosestPlayer(order, state);
 		}

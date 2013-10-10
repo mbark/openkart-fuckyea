@@ -31,12 +31,15 @@ public class MyBot implements Bot {
 	public Order playGame(GameState state) {
 		Kart me = state.getYourKart();
 		Order order = new Order();
+		Point2d position = new Point2d();
 		
 		if(me.getShells() == 5) {
-			order = moveToClosestEnemy(order, state);
+			position.add(moveToClosestEnemy(state));
 		} else {
-			order = moveToClosestBox(order, state);
+			position.add(moveToClosestBox(state));
 		}
+		position.add(playDefensive(state));
+		
 		
 		if(me.getShells() > 0 && me.getShellCooldownTimeLeft() == 0) {
 			order = shootClosestPlayer(order, state);
@@ -45,7 +48,30 @@ public class MyBot implements Bot {
 		return order;
 	}
 	
-	private Order moveToClosestBox(Order order, GameState state) {
+	private Point2d playDefensive(GameState state) {
+		Kart me = state.getYourKart();
+		if(me.getShellCooldownTimeLeft() > 0) {
+			return getAveragePosition(state);
+		} else {
+			return null;
+		}
+	}
+	
+	private Point2d getAveragePosition(GameState state) {
+		Kart me = state.getYourKart();
+		int cutoff = 40;
+		Point2d result = new Point2d();
+		for(Kart kart : state.getEnemyKarts()) {
+			if(distance(me, kart) < cutoff) {
+				Point2d position = new Point2d(kart.getXPos(), kart.getYPos());
+				result.subtract(position);
+			}
+		}
+		result.divide(state.getEnemyKarts().size());
+		return result;
+	}
+	
+	private Point2d moveToClosestBox(GameState state) {
 		Kart me = state.getYourKart();
 		ItemBox closestItemBox = null;
 		for(ItemBox i : state.getItemBoxes()) {
@@ -54,13 +80,12 @@ public class MyBot implements Bot {
 			}
 		}
 		if(closestItemBox != null) {
-			order.setMoveX(closestItemBox.getXPos());
-			order.setMoveY(closestItemBox.getYPos());
+			return new Point2d(closestItemBox.getXPos(), closestItemBox.getYPos());
 		}
-		return order;
+		return null;
 	}
 	
-	private Order moveToClosestEnemy(Order order, GameState state) {
+	private Point2d moveToClosestEnemy(GameState state) {
 		Kart me = state.getYourKart();
 		double distance = Double.MAX_VALUE;
 		Kart closest = null;
@@ -72,14 +97,13 @@ public class MyBot implements Bot {
 			}
 		}
 		if(closest == null) {
-			return order;
+			return null;
 		}
 		
 		Point2d c = interpolate(closest);
 		c = scaleToMap(c);
-		order = moveTowards(order, c);
 		
-		return order;
+		return c;
 	}
 	
 	private Order moveTowards(Order order, Point2d c) {
@@ -118,7 +142,7 @@ public class MyBot implements Bot {
 	
 	private boolean willMostDefinitelyHit(Kart me, Kart enemy) {
 		double distance = distance(me, interpolate(enemy));
-		return distance < 30 && distance > 15;
+		return distance < 30;
 	}
 	
 	private Point2d scaleToMap(Point2d c) {
